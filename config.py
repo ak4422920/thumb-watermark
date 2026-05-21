@@ -2,9 +2,9 @@
 import os
 import random
 
-API_TOKEN = os.environ.get("API_TOKEN", "8865551346:AAEXPNMq4jPNvtF-x9YkV78GfoGUGh6_Eqk")
+API_TOKEN = os.environ.get("API_TOKEN", "88655x9YkV78Gfok")
 
-MONGO_URL = os.environ.get("MONGO_URL", "mongodb+srv://ak:ak@cluster0.97safhj.mongodb.net/?appName=Cluster0")
+MONGO_URL = os.environ.get("MONGO_URL", "mongodb+srv://Cluster0")
 DB_NAME = "thumbnail_bot"
 
 OWNER_ID = int(os.environ.get("OWNER_ID", "6522435665"))
