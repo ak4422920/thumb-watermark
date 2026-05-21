@@ -1,4 +1,8 @@
+import os
 import re
+import time
+from PIL import Image, ImageEnhance, ImageFilter
+
 from aiogram import Router, types, F, Bot
 from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 from aiogram.enums import ChatType
@@ -102,6 +106,36 @@ def format_caption(text: str, style: str) -> str:
             formatted_lines.append(line)
     return '\n'.join(formatted_lines)
 
+# =========================================================================
+# 🔥 NATURAL MICRO-ENHANCER PIPELINE (ANTI-OVER_SATURATION) 🔥
+# =========================================================================
+def enhance_thumbnail_quality(input_path: str, output_path: str) -> bool:
+    try:
+        if not os.path.exists(input_path):
+            return False
+            
+        with Image.open(input_path) as img:
+            if img.mode in ("RGBA", "P"):
+                img = img.convert("RGB")
+                
+            # 1. Soft Sharpness Tuning
+            sharp_enhancer = ImageEnhance.Sharpness(img)
+            img = sharp_enhancer.enhance(1.15)
+            
+            # 2. Balanced Soft Contrast
+            contrast_enhancer = ImageEnhance.Contrast(img)
+            img = contrast_enhancer.enhance(1.08)
+            
+            # 3. Pure Natural Colors (Non-destructive vibrancy)
+            color_enhancer = ImageEnhance.Color(img)
+            img = color_enhancer.enhance(1.05)
+            
+            img.save(output_path, "JPEG", quality=95, optimize=True)
+            return True
+    except Exception as e:
+        print(f"❌ Pillow Enhancer Local Crash: {e}")
+        return False
+
 
 @router.message(F.video)
 async def handle_video(message: types.Message, bot: Bot):
@@ -175,7 +209,6 @@ async def handle_video(message: types.Message, bot: Bot):
     if canvas_active and canvas_source_thumb:
         watermark     = await get_canvas_watermark(user_id)
         selected_font = await get_user_font(user_id)
-        # Canvas worker now renders, enhances, and returns a Telegram-ready HD cover file_id.
         edited_thumb  = await add_to_canvas_queue(
             bot=bot, user_id=user_id,
             thumb_file_id=canvas_source_thumb,
@@ -186,6 +219,27 @@ async def handle_video(message: types.Message, bot: Bot):
         if edited_thumb:
             thumb_file_id = edited_thumb
 
+    # =========================================================================
+    # 🔥 DYNAMIC ENHANCER CORE LAYER & CACHE BUSTER INTEGRATION 🔥
+    # =========================================================================
+    final_cover_file = thumb_file_id  
+    stamp = int(time.time_ns()) # Unique nano-seconds fingerprint to kill Telegram server cache
+    raw_local_path = f"raw_{user_id}_{stamp}.jpg"
+    enhanced_local_path = f"enhanced_{user_id}_{stamp}.jpg"
+    
+    if thumb_file_id and str(thumb_file_id).strip():
+        try:
+            file_info = await bot.get_file(thumb_file_id)
+            await bot.download_file(file_info.file_path, raw_local_path)
+            
+            if enhance_thumbnail_quality(raw_local_path, enhanced_local_path):
+                if os.path.exists(enhanced_local_path):
+                    final_cover_file = types.FSInputFile(enhanced_local_path)
+        except Exception as err:
+            print(f"⚠️ Enhancer bypassed or errored: {err}")
+            final_cover_file = thumb_file_id 
+    # =========================================================================
+
     if thumb_file_id:
         if not is_premium and user_id != OWNER_ID:
             await increment_usage(user_id)
@@ -194,11 +248,12 @@ async def handle_video(message: types.Message, bot: Bot):
             try: await message.delete()
             except Exception: pass
 
+        # 🔥 FIXED: 'cover' renamed to 'thumbnail' for Aiogram 3 compatibility
         await bot.send_video(
             chat_id=message.chat.id,
             video=message.video.file_id,
             caption=final_caption,
-            cover=thumb_file_id,
+            thumbnail=final_cover_file,
             parse_mode="HTML",
             reply_markup=keyboard
         )
@@ -208,11 +263,12 @@ async def handle_video(message: types.Message, bot: Bot):
         user_dump_id = await get_custom_dump(user_id)
         if user_dump_id:
             try:
+                # 🔥 FIXED: 'cover' renamed to 'thumbnail'
                 await bot.send_video(
                     chat_id=user_dump_id,
                     video=message.video.file_id,
                     caption=final_caption,
-                    cover=thumb_file_id,
+                    thumbnail=final_cover_file,
                     parse_mode="HTML"
                 )
             except Exception as e:
@@ -228,10 +284,17 @@ async def handle_video(message: types.Message, bot: Bot):
                 daily_status  = "N/A" if message.chat.type == ChatType.CHANNEL else f"{current_count}/{DAILY_LIMIT if not is_premium else '∞'}"
                 await bot.send_message(
                     LOG_CHANNEL,
-                    f"📹 <b>ᴠɪᴅᴇᴏ ᴘʀᴏᴄᴇssᴇᴅ</b>\n🆔 <code>{user_id}</code>\n📊 Daily: {daily_status}",
+                    f"📹 <b>ᴠɪᴅᴇᴏ ᴘʀᴏᴄᴇssᴇᴅ (ᴜʟᴛʀᴀ-ʜᴅ)</b>\n🆔 <code>{user_id}</code>\n📊 Daily: {daily_status}",
                     parse_mode="HTML"
                 )
             except Exception: pass
+            
+        # 🧹 CLEAN MEMORY PIPELINE INSTANTLY
+        try:
+            if os.path.exists(raw_local_path): os.remove(raw_local_path)
+            if os.path.exists(enhanced_local_path): os.remove(enhanced_local_path)
+        except Exception: pass
+        
     else:
         if message.chat.type == ChatType.PRIVATE:
             await message.answer(
