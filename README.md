@@ -3,12 +3,6 @@
 <p align="center">
     <b>A powerful Telegram bot to add custom thumbnails to your videos instantly.</b>
     <br>
-    <a href="https://t.me/cantarellabots">
-        <img src="https://img.shields.io/badge/Channel-CantarellaBots-blue?style=flat-square&logo=telegram" alt="Channel">
-    </a>
-    <a href="https://t.me/cantarella_wuwa">
-        <img src="https://img.shields.io/badge/Developer-cantarella__wuwa-blue?style=flat-square&logo=telegram" alt="Developer">
-    </a>
 </p>
 
 ---
