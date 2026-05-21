@@ -119,12 +119,16 @@ async def start_cmd(message: types.Message, bot: Bot, command: CommandObject):
 
     await message.answer(welcome_text, parse_mode="HTML", reply_markup=keyboard)
 
+
 @router.callback_query(F.data == "my_stats")
 async def show_stats(callback: CallbackQuery):
-    """Show user referral stats via button."""
+    """Show user referral stats via button safely without Caption/Text crashes."""
     user_data = await get_user(callback.from_user.id)
     if not user_data:
-        await callback.answer("Data not found!")
+        try:
+            await callback.answer("⚠️ Data not found!", show_alert=True)
+        except Exception:
+            pass
         return
 
     is_premium = user_data.get("is_premium", False)
@@ -139,5 +143,27 @@ async def show_stats(callback: CallbackQuery):
         f"🔗 Referral Link: <code>https://t.me/{(await callback.bot.get_me()).username}?start=refer_{callback.from_user.id}</code>"
     )
     
-    await callback.message.edit_caption(caption=status_text, parse_mode="HTML", reply_markup=callback.message.reply_markup)
-    await callback.answer()
+    # 🔥 BULLETPROOF FIX: Auto-Detect and Route to edit_caption or edit_text
+    try:
+        # Agar start message photo ke saath bheja gaya tha
+        await callback.message.edit_caption(
+            caption=status_text, 
+            parse_mode="HTML", 
+            reply_markup=callback.message.reply_markup
+        )
+    except Exception:
+        try:
+            # Fallback: Agar normal plain text message hai (no caption exist)
+            await callback.message.edit_text(
+                text=status_text, 
+                parse_mode="HTML", 
+                reply_markup=callback.message.reply_markup
+            )
+        except Exception:
+            pass
+
+    # Safe callback query answer handler to protect from timeout alerts
+    try:
+        await callback.answer()
+    except Exception:
+        pass
