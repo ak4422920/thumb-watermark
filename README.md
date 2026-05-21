@@ -101,6 +101,7 @@ thumbnail-bot/
 - **Developer**: [@cantarella_wuwa](https://t.me/cantarella_wuwa)
 - **Channel**: [Cantarella Bots](https://t.me/cantarellabots)
 - **Helper**: [@yato](https://github.com/ProYato)
+- **Upgrade**: [@akmovieverse](https://t.me/akmovieverse)
 <p align="center">
   <b>⭐ Star this repo if you like it!</b>
 </p>
